@@ -13,7 +13,7 @@ class JwtService(
 ) {
     private val secretKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(jwtSecret))
     private val accessTokenValidity = 15L * 60L * 1000L
-    private val refreshTokenValidity = 30L * 24 * 60 * 60L * 1000L
+    val refreshTokenValidity = 30L * 24 * 60 * 60L * 1000L
 
     private fun generateToken(
         userId: String,
@@ -36,6 +36,12 @@ class JwtService(
     fun generateRefreshToken(userId: String):String = generateToken(userId, "refresh", refreshTokenValidity)
 
     fun validateAccessToken(token: String): Boolean {
+        val claims = parseALlClaims(token) ?: return false
+        val tokenType = claims["type"] as? String ?: return false
+        return tokenType == "access"
+    }
+
+    fun validateRefreshToken(token: String): Boolean {
         val claims = parseALlClaims(token) ?: return false
         val tokenType = claims["type"] as? String ?: return false
         return tokenType == "refresh"
