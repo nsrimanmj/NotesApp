@@ -4,6 +4,7 @@ import com.sriman.notes.controller.NoteController.NoteResponse
 import com.sriman.notes.database.model.Note
 import com.sriman.notes.database.repository.NoteRepository
 import org.bson.types.ObjectId
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -37,6 +38,7 @@ class NoteController(private val noteRepository: NoteRepository) {
     fun save(
         @RequestBody body: NoteRequest
     ): NoteResponse{
+        val ownerId = SecurityContextHolder.getContext().authentication.principal as String
         val note = noteRepository.save(
             Note(
                 id = body.id?.let { ObjectId(it) } ?: ObjectId.get(),
@@ -44,21 +46,22 @@ class NoteController(private val noteRepository: NoteRepository) {
                 content = body.content,
                 color = body.color,
                 createdAt = Instant.now(),
-                ownerId = ObjectId()
+                ownerId = ObjectId(ownerId)
             )
         )
         return note.toResponse()
     }
 
     @GetMapping
-    fun findByOwnerId(
-        @RequestParam(required = false) ownerId: String
-    ): List<NoteResponse>{
+    fun findByOwnerId(): List<NoteResponse>{
+        val ownerId = SecurityContextHolder.getContext().authentication.principal as String
         return noteRepository.findByOwnerId(ObjectId(ownerId)).map {it.toResponse()}
     }
 
     @DeleteMapping(path = ["/{id}"])
-    fun deleteByUd(@PathVariable id: String){
+    fun deleteById(@PathVariable id: String){
+
+        val ownerId = SecurityContextHolder.getContext().authentication.principal as String
         noteRepository.deleteById(ObjectId(id))
     }
 }
